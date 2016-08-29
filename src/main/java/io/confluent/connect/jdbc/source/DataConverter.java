@@ -125,9 +125,9 @@ public class DataConverter {
       // 16 bit ints
       case Types.SMALLINT: {
         if (optional) {
-          builder.field(fieldName, Schema.OPTIONAL_INT16_SCHEMA);
+          builder.field(fieldName, Schema.OPTIONAL_INT32_SCHEMA);
         } else {
-          builder.field(fieldName, Schema.INT16_SCHEMA);
+          builder.field(fieldName, Schema.INT32_SCHEMA);
         }
         break;
       }
@@ -295,7 +295,7 @@ public class DataConverter {
 
       // 16 bits int
       case Types.SMALLINT: {
-        colValue = resultSet.getShort(col);
+        colValue = resultSet.getInt(col);
         break;
       }
 

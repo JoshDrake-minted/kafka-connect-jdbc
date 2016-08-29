@@ -72,13 +72,13 @@ public class JdbcSourceTaskConversionTest extends JdbcSourceTaskTestBase {
 
   @Test
   public void testSmallInt() throws Exception {
-    typeConversion("SMALLINT", false, 1, Schema.INT16_SCHEMA, (short) 1);
+    typeConversion("SMALLINT", false, 1, Schema.INT32_SCHEMA, 1);
   }
 
   @Test
   public void testNullableSmallInt() throws Exception {
-    typeConversion("SMALLINT", true, 1, Schema.OPTIONAL_INT16_SCHEMA, (short) 1);
-    typeConversion("SMALLINT", true, null, Schema.OPTIONAL_INT16_SCHEMA, null);
+    typeConversion("SMALLINT", true, 1, Schema.OPTIONAL_INT32_SCHEMA, 1);
+    typeConversion("SMALLINT", true, null, Schema.OPTIONAL_INT32_SCHEMA, null);
   }
 
   @Test
