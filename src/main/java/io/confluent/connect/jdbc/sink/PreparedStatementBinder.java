@@ -156,15 +156,33 @@ public class PreparedStatementBinder {
   }
 
   static void bindField(PreparedStatement statement, int index, Schema schema, Object value) throws SQLException {
+    boolean bound = false;
+
     if (value == null) {
       statement.setObject(index, null);
     } else {
       if (schema.name() != null) {
-        LogicalTypeConverter logicalConverter = LOGICAL_CONVERTERS.get(schema.name());
-        if (logicalConverter != null) {
-          value = logicalConverter.convert(schema, value);
+        switch (schema.name()) {
+          case Timestamp.LOGICAL_NAME:
+            long tss = Timestamp.fromLogical(schema, (java.util.Date) value);
+            statement.setTimestamp(index, new java.sql.Timestamp(tss));
+            bound = true;
+            break;
+          case Date.LOGICAL_NAME:
+            int ts = Date.fromLogical(schema, (java.util.Date) value);
+            statement.setDate(index, new java.sql.Date(ts));
+            bound = true;
+            break;
+          default:
+            LogicalTypeConverter logicalConverter = LOGICAL_CONVERTERS.get(schema.name());
+            if (logicalConverter != null) {
+              value = logicalConverter.convert(schema, value);
+            }
         }
       }
+
+      if (bound) return;
+
       switch (schema.type()) {
         case INT8:
           statement.setByte(index, (Byte) value);
