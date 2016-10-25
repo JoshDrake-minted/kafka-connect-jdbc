@@ -55,7 +55,7 @@ public class DataConverter {
   };
 
   public static Schema convertSchema(String tableName, ResultSetMetaData metadata)
-      throws SQLException {
+          throws SQLException {
     // TODO: Detect changes to metadata, which will require schema updates
     SchemaBuilder builder = SchemaBuilder.struct().name(tableName);
     for (int col = 1; col <= metadata.getColumnCount(); col++) {

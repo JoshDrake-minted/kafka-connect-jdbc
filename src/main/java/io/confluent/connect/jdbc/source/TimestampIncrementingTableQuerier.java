@@ -58,23 +58,29 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   private String timestampColumn;
   private String incrementingColumn;
+  private boolean incrementingColumnUsePrimaryKey;
   private long timestampDelay;
   private TimestampIncrementingOffset offset;
 
-  public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
-                                           String timestampColumn, String incrementingColumn,
+  public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix, String keyColumnName,
+                                           String timestampColumn, String incrementingColumn, boolean incrementingColumnUsePrimaryKey,
                                            Map<String, Object> offsetMap, Long timestampDelay) {
-    super(mode, name, topicPrefix);
+    super(mode, name, topicPrefix, keyColumnName);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
     this.timestampDelay = timestampDelay;
     this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
+    this.incrementingColumnUsePrimaryKey = incrementingColumnUsePrimaryKey;
   }
 
   @Override
   protected void createPreparedStatement(Connection db) throws SQLException {
-    // Default when unspecified uses an autoincrementing column
-    if (incrementingColumn != null && incrementingColumn.isEmpty()) {
+    // Use primary key if one exists and use.primary.key is set to true.
+    // Default when unspecified uses an autoincrementing column.
+    if (incrementingColumnUsePrimaryKey && keyColumn != null) {
+      incrementingColumn = keyColumn;
+      // TODO verify type of key column to be possible to be autoincrementing?
+    } else if (incrementingColumn == null || incrementingColumn.isEmpty()) {
       incrementingColumn = JdbcUtils.getAutoincrementColumn(db, name);
     }
 
@@ -178,11 +184,11 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
   @Override
   public SourceRecord extractRecord() throws SQLException {
-    Struct record = DataConverter.convertRecord(schema, resultSet);
+    Struct record = DataConverter.convertRecord(valueSchema, resultSet);
     Long id = null;
     Timestamp latest = null;
     if (incrementingColumn != null) {
-      switch (schema.field(incrementingColumn).schema().type()) {
+      switch (valueSchema.field(incrementingColumn).schema().type()) {
         case INT32:
           id = (long) (Integer) record.get(incrementingColumn);
           break;
@@ -191,7 +197,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
           break;
         default:
           throw new ConnectException("Invalid type for incrementing column: "
-                                            + schema.field(incrementingColumn).schema().type());
+                                            + valueSchema.field(incrementingColumn).schema().type());
       }
 
       // If we are only using an incrementing column, then this must be incrementing. If we are also
@@ -222,6 +228,15 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       default:
         throw new ConnectException("Unexpected query mode: " + mode);
     }
+
+    if (keyColumn != null) {
+      Object key = record.get(keyColumn);
+
+      if (key != null) {
+        return new SourceRecord(partition, offset.toMap(), topic, keySchema, key, record.schema(), record);
+      }
+    }
+
     return new SourceRecord(partition, offset.toMap(), topic, record.schema(), record);
   }
 
