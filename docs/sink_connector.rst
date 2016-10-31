@@ -140,13 +140,21 @@ We use the following mapping from Connect schema types to database-specific type
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 | BOOLEAN     | TINYINT         | NUMBER(1,0)     | BOOLEAN          | NUMERIC | BIT            |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
-| STRING      | VARCHAR(256)    | NVARCHAR2(4000) | TEXT             | TEXT    | VARCHAR(MAX)   |
+| STRING      | VARCHAR(256)    | NCLOB           | TEXT             | TEXT    | VARCHAR(MAX)   |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 | BYTES       | VARBINARY(1024) | BLOB            | BYTEA            | BLOB    | VARBINARY(MAX) |
++-------------+-----------------+-----------------+------------------+---------+----------------+
+| 'Decimal'   | DECIMAL(65,s)   | NUMBER(*,s)     | DECIMAL          | NUMERIC | DECIMAL(38,s)  |
++-------------+-----------------+-----------------+------------------+---------+----------------+
+| 'Date'      | DATE            | DATE            | DATE             | NUMERIC | DATE           |
++-------------+-----------------+-----------------+------------------+---------+----------------+
+| 'Time'      | TIME(3)         | DATE            | TIME             | NUMERIC | TIME           |
++-------------+-----------------+-----------------+------------------+---------+----------------+
+| 'Timestamp' | TIMESTAMP(3)    | TIMESTAMP       | TIMESTAMP        | NUMERIC | DATETIME2      |
 +-------------+-----------------+-----------------+------------------+---------+----------------+
 
 Auto-creation or auto-evolution is not supported for databases not mentioned here.
 
 .. important::
-    For backwards-compatible table schema evolution, new fields in record schemas should be optional or have a default value. If you need to delete a field, the table schema should be manually
-    altered to either drop the corresponding column, assign it a default value, or make it nullable.
+    For backwards-compatible table schema evolution, new fields in record schemas must be optional or have a default value.
+    If you need to delete a field, the table schema should be manually altered to either drop the corresponding column, assign it a default value, or make it nullable.

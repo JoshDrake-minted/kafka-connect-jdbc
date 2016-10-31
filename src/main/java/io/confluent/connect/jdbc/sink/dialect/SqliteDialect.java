@@ -16,12 +16,15 @@
 
 package io.confluent.connect.jdbc.sink.dialect;
 
+import org.apache.kafka.connect.data.Date;
+import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Time;
+import org.apache.kafka.connect.data.Timestamp;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,21 +35,50 @@ import static io.confluent.connect.jdbc.sink.dialect.StringBuilderUtil.nCopiesTo
 
 public class SqliteDialect extends DbDialect {
   public SqliteDialect() {
-    super(getSqlTypeMap(), "`", "`");
+    super("`", "`");
   }
 
-  private static Map<Schema.Type, String> getSqlTypeMap() {
-    Map<Schema.Type, String> map = new HashMap<>();
-    map.put(Schema.Type.INT8, "NUMERIC");
-    map.put(Schema.Type.INT16, "NUMERIC");
-    map.put(Schema.Type.INT32, "NUMERIC");
-    map.put(Schema.Type.INT64, "NUMERIC");
-    map.put(Schema.Type.FLOAT32, "REAL");
-    map.put(Schema.Type.FLOAT64, "REAL");
-    map.put(Schema.Type.BOOLEAN, "NUMERIC");
-    map.put(Schema.Type.STRING, "TEXT");
-    map.put(Schema.Type.BYTES, "BLOB");
-    return map;
+  @Override
+  protected void formatColumnValue(StringBuilder builder, String schemaName, Map<String, String> schemaParameters, Schema.Type type, Object value) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Date.LOGICAL_NAME:
+        case Time.LOGICAL_NAME:
+        case Timestamp.LOGICAL_NAME:
+          builder.append(((java.util.Date) value).getTime());
+          return;
+      }
+    }
+    super.formatColumnValue(builder, schemaName, schemaParameters, type, value);
+  }
+
+  @Override
+  protected String getSqlType(String schemaName, Map<String, String> parameters, Schema.Type type) {
+    if (schemaName != null) {
+      switch (schemaName) {
+        case Decimal.LOGICAL_NAME:
+        case Date.LOGICAL_NAME:
+        case Time.LOGICAL_NAME:
+        case Timestamp.LOGICAL_NAME:
+          return "NUMERIC";
+      }
+    }
+    switch (type) {
+      case BOOLEAN:
+      case INT8:
+      case INT16:
+      case INT32:
+      case INT64:
+        return "INTEGER";
+      case FLOAT32:
+      case FLOAT64:
+        return "REAL";
+      case STRING:
+        return "TEXT";
+      case BYTES:
+        return "BLOB";
+    }
+    return super.getSqlType(schemaName, parameters, type);
   }
 
   @Override
