@@ -72,7 +72,7 @@ public class PostgreSqlDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols) {
+  public String getUpsertQuery(final String table, final Collection<String> keyCols, final Collection<String> cols, Collection<String> upsertCols) {
     final StringBuilder builder = new StringBuilder();
     builder.append("INSERT INTO ");
     builder.append(escaped(table));
@@ -86,7 +86,7 @@ public class PostgreSqlDialect extends DbDialect {
     joinToBuilder(
         builder,
         ",",
-        cols,
+        upsertCols,
         new StringBuilderUtil.Transform<String>() {
           @Override
           public void apply(StringBuilder builder, String col) {

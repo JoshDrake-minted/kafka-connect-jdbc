@@ -61,7 +61,7 @@ public class BufferedRecords {
     if (currentSchemaPair == null) {
       currentSchemaPair = schemaPair;
       // re-initialize everything that depends on the record schema
-      fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, config.fieldsWhitelist, currentSchemaPair);
+      fieldsMetadata = FieldsMetadata.extract(tableName, config.pkMode, config.pkFields, config.fieldsWhitelist, config.fieldsUpsertWhitelist, currentSchemaPair);
       dbStructure.createOrAmendIfNecessary(config, connection, tableName, fieldsMetadata);
       final String insertSql = getInsertSql();
       log.debug("{} sql: {}", config.insertMode, insertSql);
@@ -123,7 +123,7 @@ public class BufferedRecords {
               "Write to table '%s' in UPSERT mode requires key field names to be known, check the primary key configuration", tableName
           ));
         }
-        return dbDialect.getUpsertQuery(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames);
+        return dbDialect.getUpsertQuery(tableName, fieldsMetadata.keyFieldNames, fieldsMetadata.nonKeyFieldNames, fieldsMetadata.upsertFieldNames);
       default:
         throw new ConnectException("Invalid insert mode");
     }

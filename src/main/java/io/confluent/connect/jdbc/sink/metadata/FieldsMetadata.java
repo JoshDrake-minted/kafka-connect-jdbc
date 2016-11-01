@@ -33,9 +33,10 @@ public class FieldsMetadata {
 
   public final Set<String> keyFieldNames;
   public final Set<String> nonKeyFieldNames;
+  public final Set<String> upsertFieldNames;
   public final Map<String, SinkRecordField> allFields;
 
-  private FieldsMetadata(Set<String> keyFieldNames, Set<String> nonKeyFieldNames, Map<String, SinkRecordField> allFields) {
+  private FieldsMetadata(Set<String> keyFieldNames, Set<String> nonKeyFieldNames, Set<String> upsertFieldNames, Map<String, SinkRecordField> allFields) {
     if ((keyFieldNames.size() + nonKeyFieldNames.size() != allFields.size())
         || !(allFields.keySet().containsAll(keyFieldNames) && allFields.keySet().containsAll(nonKeyFieldNames))) {
       throw new IllegalArgumentException(String.format(
@@ -45,6 +46,7 @@ public class FieldsMetadata {
     }
     this.keyFieldNames = keyFieldNames;
     this.nonKeyFieldNames = nonKeyFieldNames;
+    this.upsertFieldNames = upsertFieldNames;
     this.allFields = allFields;
   }
 
@@ -53,9 +55,10 @@ public class FieldsMetadata {
       final JdbcSinkConfig.PrimaryKeyMode pkMode,
       final List<String> configuredPkFields,
       final Set<String> fieldsWhitelist,
+      final Set<String> fieldsUpsertWhitelist,
       final SchemaPair schemaPair
   ) {
-    return extract(tableName, pkMode, configuredPkFields, fieldsWhitelist, schemaPair.keySchema, schemaPair.valueSchema);
+    return extract(tableName, pkMode, configuredPkFields, fieldsWhitelist, fieldsUpsertWhitelist, schemaPair.keySchema, schemaPair.valueSchema);
   }
 
   public static FieldsMetadata extract(
@@ -63,6 +66,7 @@ public class FieldsMetadata {
       final JdbcSinkConfig.PrimaryKeyMode pkMode,
       final List<String> configuredPkFields,
       final Set<String> fieldsWhitelist,
+      final Set<String> fieldsUpsertWhitelist,
       final Schema keySchema,
       final Schema valueSchema
   ) {
@@ -186,11 +190,27 @@ public class FieldsMetadata {
       }
     }
 
+    final Set<String> upsertFieldNames = new LinkedHashSet<>();
+    if (valueSchema != null) {
+      for (Field field : valueSchema.fields()) {
+        if (keyFieldNames.contains(field.name())) {
+          continue;
+        }
+        if (!fieldsUpsertWhitelist.isEmpty() && !fieldsUpsertWhitelist.contains(field.name())) {
+          continue;
+        }
+
+        upsertFieldNames.add(field.name());
+
+        final Schema fieldSchema = field.schema();
+      }
+    }
+
     if (allFields.isEmpty()) {
       throw new ConnectException("No fields found using key and value schemas for table: " + tableName);
     }
 
-    return new FieldsMetadata(keyFieldNames, nonKeyFieldNames, allFields);
+    return new FieldsMetadata(keyFieldNames, nonKeyFieldNames, upsertFieldNames, allFields);
   }
 
   @Override
@@ -198,6 +218,7 @@ public class FieldsMetadata {
     return "FieldsMetadata{" +
            "keyFieldNames=" + keyFieldNames +
            ", nonKeyFieldNames=" + nonKeyFieldNames +
+           ", upsertFieldNames=" + upsertFieldNames +
            ", allFields=" + allFields +
            '}';
   }

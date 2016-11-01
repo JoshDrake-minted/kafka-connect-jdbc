@@ -145,6 +145,12 @@ public class JdbcSinkConfig extends AbstractConfig {
       + " while this configuration is applicable for the other columns.";
   private static final String FIELDS_WHITELIST_DISPLAY = "Fields Whitelist";
 
+  public static final String FIELDS_UPSERT_WHITELIST = "fields.upsert.whitelist";
+  private static final String FIELDS_UPSERT_WHITELIST_DEFAULT = "";
+  private static final String FIELDS_UPSERT_WHITELIST_DOC =
+      "List of comma-separated record value field names to use during upsert queries. If empty, the value of this configuration item falls back to that of the ``" + FIELDS_WHITELIST + "``.\n";
+  private static final String FIELDS_UPSERT_WHITELIST_DISPLAY = "Fields Upsert Whitelist";
+
   private static final ConfigDef.Range NON_NEGATIVE_INT_VALIDATOR = ConfigDef.Range.atLeast(0);
 
   private static final String CONNECTION_GROUP = "Connection";
@@ -184,6 +190,9 @@ public class JdbcSinkConfig extends AbstractConfig {
       .define(FIELDS_WHITELIST, ConfigDef.Type.LIST, FIELDS_WHITELIST_DEFAULT,
               ConfigDef.Importance.MEDIUM, FIELDS_WHITELIST_DOC,
               DATAMAPPING_GROUP, 4, ConfigDef.Width.LONG, FIELDS_WHITELIST_DISPLAY)
+      .define(FIELDS_UPSERT_WHITELIST, ConfigDef.Type.LIST, FIELDS_UPSERT_WHITELIST_DEFAULT,
+              ConfigDef.Importance.MEDIUM, FIELDS_UPSERT_WHITELIST_DOC,
+              DATAMAPPING_GROUP, 4, ConfigDef.Width.LONG, FIELDS_UPSERT_WHITELIST_DISPLAY)
       // DDL
       .define(AUTO_CREATE, ConfigDef.Type.BOOLEAN, AUTO_CREATE_DEFAULT,
               ConfigDef.Importance.MEDIUM, AUTO_CREATE_DOC,
@@ -212,6 +221,7 @@ public class JdbcSinkConfig extends AbstractConfig {
   public final PrimaryKeyMode pkMode;
   public final List<String> pkFields;
   public final Set<String> fieldsWhitelist;
+  public final Set<String> fieldsUpsertWhitelist;
 
   public JdbcSinkConfig(Map<?, ?> props) {
     super(CONFIG_DEF, props);
@@ -228,6 +238,7 @@ public class JdbcSinkConfig extends AbstractConfig {
     pkMode = PrimaryKeyMode.valueOf(getString(PK_MODE).toUpperCase());
     pkFields = getList(PK_FIELDS);
     fieldsWhitelist = new HashSet<>(getList(FIELDS_WHITELIST));
+    fieldsUpsertWhitelist = new HashSet<>(getList(FIELDS_UPSERT_WHITELIST));
   }
 
   private String getPasswordValue(String key) {

@@ -86,7 +86,7 @@ public abstract class DbDialect {
     return builder.toString();
   }
 
-  public String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns) {
+  public String getUpsertQuery(final String table, final Collection<String> keyColumns, final Collection<String> columns, final Collection<String> upsertColumns) {
     throw new UnsupportedOperationException();
   }
 

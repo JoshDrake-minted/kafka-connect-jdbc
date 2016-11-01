@@ -39,7 +39,7 @@ public class GenericDialect extends DbDialect {
   }
 
   @Override
-  public String getUpsertQuery(String table, Collection<String> keyColumns, Collection<String> columns) {
+  public String getUpsertQuery(String table, Collection<String> keyColumns, Collection<String> columns, Collection<String> upsertColumns) {
     throw new UnsupportedOperationException();
   }
 }
